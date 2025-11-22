@@ -100,6 +100,7 @@ export async function DELETE(req: Request) {
   try {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
+
     if (!id) {
       return NextResponse.json(
         { status: "error", message: "Missing id" },
@@ -108,16 +109,26 @@ export async function DELETE(req: Request) {
     }
 
     const events = loadEvents();
+    const before = events.length;
 
     const updated = events.filter((ev) => ev._id !== id);
+
+    if (updated.length === before) {
+      return NextResponse.json(
+        { status: "error", message: "Event not found" },
+        { status: 404 }
+      );
+    }
+
     saveEvents(updated);
 
     return NextResponse.json({ status: "success" }, { status: 200 });
   } catch (err) {
-    console.error("DELETE error:", err);
+    console.error("DELETE /api/events error:", err);
     return NextResponse.json(
       { status: "error", message: "Delete failed" },
       { status: 500 }
     );
   }
 }
+
