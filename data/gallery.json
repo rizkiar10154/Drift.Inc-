@@ -1,0 +1,49 @@
+[
+  {
+    "id": "c7c8604e-f745-49b0-8241-daec8bead4fe",
+    "url": "/uploads/1763847859232-Drift.Inc-Header.jpg.webp",
+    "category": "Customer Moments",
+    "caption": "",
+    "uploader": null,
+    "uploadedAt": "2025-11-22T21:44:19.276Z",
+    "isDeleted": false
+  },
+  {
+    "id": "350df681-19d9-4f2b-b85b-044d47350fac",
+    "url": "/uploads/1763845216102-Header-background.jpg.webp",
+    "category": "Highlight",
+    "caption": "",
+    "uploader": null,
+    "uploadedAt": "2025-11-22T21:00:16.121Z",
+    "isDeleted": false
+  },
+  {
+    "id": "a12885f9-17b1-474b-a8cc-3fac666e1e76",
+    "url": "/uploads/1763845208522-Logo-Black1.jpg.webp",
+    "category": "Race Day",
+    "caption": "",
+    "uploader": null,
+    "uploadedAt": "2025-11-22T21:00:08.807Z",
+    "isDeleted": false
+  },
+  {
+    "id": "837a2570-23a0-4da4-b73a-4a6065a45248",
+    "url": "/uploads/1763844953186-Logo-Schedule.png.webp",
+    "category": "Customer Moments",
+    "caption": "",
+    "uploader": null,
+    "uploadedAt": "2025-11-22T20:55:53.365Z",
+    "isDeleted": true,
+    "deletedAt": "2025-11-22T20:59:53.778Z"
+  },
+  {
+    "id": "3d43b896-f901-43db-80bc-08a75da8254a",
+    "url": "/uploads/1763844909526-WhatsApp-Image-2025-11-02-at-22.18.13_b671e374.jpg.webp",
+    "category": "Race Day",
+    "caption": "",
+    "uploader": null,
+    "uploadedAt": "2025-11-22T20:55:09.611Z",
+    "isDeleted": true,
+    "deletedAt": "2025-11-22T20:56:38.152Z"
+  }
+]
