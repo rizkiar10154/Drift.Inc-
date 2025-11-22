@@ -12,7 +12,8 @@ if (!uri) {
 
 declare global {
   // allow global var reuse in dev mode
-  var _mongoClientPromise: Promise<MongoClient>;
+  // this avoids creating multiple connections during development
+  var _mongoClientPromise: Promise<MongoClient> | undefined;
 }
 
 if (process.env.NODE_ENV === "development") {
@@ -20,7 +21,7 @@ if (process.env.NODE_ENV === "development") {
     client = new MongoClient(uri, options);
     global._mongoClientPromise = client.connect();
   }
-  clientPromise = global._mongoClientPromise;
+  clientPromise = global._mongoClientPromise!;
 } else {
   client = new MongoClient(uri, options);
   clientPromise = client.connect();
