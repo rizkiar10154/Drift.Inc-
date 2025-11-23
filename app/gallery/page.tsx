@@ -1,100 +1,82 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { GALLERY_CATEGORIES } from "@/constants/categories";
 
 type GalleryItem = {
   id: string;
   url: string;
-  store: string;
-  category?: string;
-  caption?: string;
+  category: string;
+  caption: string;
+  uploaded_at: string;
 };
 
 export default function GalleryPage() {
   const [images, setImages] = useState<GalleryItem[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [categoryFilter, setCategoryFilter] = useState("All");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
-  // prevent double triggers in scroll
-  const isFetchingRef = useRef(false);
-
   const CATEGORY_OPTIONS = ["All", ...GALLERY_CATEGORIES];
 
-  // -----------------------------
-  // Fetch Gallery Items
-  // -----------------------------
+  // Fetch gallery from API
   const fetchGallery = useCallback(async () => {
-    if (isFetchingRef.current) return; 
-    isFetchingRef.current = true;
-
     setLoading(true);
 
     const params = new URLSearchParams();
-    if (categoryFilter !== "All") params.append("category", categoryFilter);
-    params.append("page", String(page));
+    params.append("page", page.toString());
     params.append("limit", "24");
 
+    if (categoryFilter !== "All") {
+      params.append("category", categoryFilter);
+    }
+
     try {
-      const res = await fetch(`/api/gallery?${params.toString()}&ts=${Date.now()}`, { 
-        cache: "no-store" 
+      const res = await fetch(`/api/gallery?${params.toString()}`, {
+        cache: "no-store",
       });
+
       const json = await res.json();
-
       if (json.success) {
-        const newItems: GalleryItem[] = json.data;
+        const newData: GalleryItem[] = json.data;
 
-        if (newItems.length === 0) {
+        if (newData.length === 0) {
           setHasMore(false);
         } else {
-          // avoid duplicates using a Map
-          setImages(prev => {
-            const map = new Map(prev.map(i => [i.id, i]));
-            newItems.forEach(i => map.set(i.id, i));
-            return Array.from(map.values());
-          });
+          setImages((prev) => [...prev, ...newData]);
         }
       }
     } catch (err) {
-      console.error(err);
+      console.error("Error fetching gallery:", err);
     }
 
     setLoading(false);
-    isFetchingRef.current = false;
   }, [categoryFilter, page]);
 
-  // -----------------------------
-  // Reset when category changes
-  // -----------------------------
+  // Reset when category filter changes
   useEffect(() => {
     setImages([]);
     setPage(1);
     setHasMore(true);
   }, [categoryFilter]);
 
-  // -----------------------------
-  // Fetch on page/filter change
-  // -----------------------------
+  // Fetch when filter or page changes
   useEffect(() => {
     fetchGallery();
   }, [fetchGallery]);
 
-  // -----------------------------
-  // Infinite Scroll
-  // -----------------------------
+  // Infinite scroll
   useEffect(() => {
     const onScroll = () => {
       if (
         window.innerHeight + window.scrollY >= document.body.offsetHeight - 300 &&
         !loading &&
-        hasMore &&
-        !isFetchingRef.current
+        hasMore
       ) {
-        setPage(p => p + 1);
+        setPage((p) => p + 1);
       }
     };
 
@@ -102,26 +84,25 @@ export default function GalleryPage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, [loading, hasMore]);
 
-  // -----------------------------
-  // Modal Navigation
-  // -----------------------------
+  // Modal navigation
   const nextImage = () => {
-    if (selectedImageIndex !== null && selectedImageIndex < images.length - 1) {
+    if (selectedImageIndex === null) return;
+    if (selectedImageIndex < images.length - 1) {
       setSelectedImageIndex(selectedImageIndex + 1);
     }
   };
 
   const prevImage = () => {
-    if (selectedImageIndex !== null && selectedImageIndex > 0) {
+    if (selectedImageIndex === null) return;
+    if (selectedImageIndex > 0) {
       setSelectedImageIndex(selectedImageIndex - 1);
     }
   };
 
-  // -----------------------------
-  // Render
-  // -----------------------------
   return (
     <section className="relative min-h-screen p-16 text-white">
+
+      {/* Background */}
       <div className="absolute inset-0 bg-[url('/track-bg.jpg')] bg-cover bg-center opacity-40"></div>
       <div className="absolute inset-0 bg-black/40"></div>
 
@@ -130,7 +111,7 @@ export default function GalleryPage() {
           Drift.Inc Gallery
         </h1>
 
-        {/* Category Filter */}
+        {/* CATEGORY FILTER */}
         <div className="flex justify-center gap-6 mb-12 flex-wrap">
           <select
             value={categoryFilter}
@@ -143,7 +124,7 @@ export default function GalleryPage() {
           </select>
         </div>
 
-        {/* Gallery Grid */}
+        {/* GALLERY GRID */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {images.map((img, i) => (
             <motion.div
@@ -156,12 +137,8 @@ export default function GalleryPage() {
               <img
                 src={img.url}
                 className="object-cover w-full h-48 group-hover:scale-105 transition-transform duration-300"
-                alt={img.caption || "Gallery"}
+                alt={img.caption || "Gallery image"}
               />
-
-              <div className="absolute bottom-1 left-2 text-xs bg-black/60 px-2 py-1 rounded">
-                {img.store}
-              </div>
 
               {img.category && (
                 <div className="absolute top-1 left-2 text-xs bg-red-600/80 px-2 py-1 rounded shadow">
@@ -172,6 +149,7 @@ export default function GalleryPage() {
           ))}
         </div>
 
+        {/* LOADING INDICATOR */}
         {loading && (
           <div className="text-center text-gray-400 py-10 animate-pulse">
             Loading more photos...
@@ -179,7 +157,7 @@ export default function GalleryPage() {
         )}
       </div>
 
-      {/* Modal Viewer */}
+      {/* MODAL */}
       <AnimatePresence>
         {selectedImageIndex !== null && (
           <motion.div
@@ -195,13 +173,13 @@ export default function GalleryPage() {
               className="max-h-[90vh] max-w-[90vw] object-contain rounded-xl"
             />
 
+            {/* NAVIGATION */}
             <button
               className="absolute left-10 text-white text-4xl"
               onClick={(e) => { e.stopPropagation(); prevImage(); }}
             >
               ‹
             </button>
-
             <button
               className="absolute right-10 text-white text-4xl"
               onClick={(e) => { e.stopPropagation(); nextImage(); }}

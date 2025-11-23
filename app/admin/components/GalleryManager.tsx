@@ -1,313 +1,228 @@
-// app/admin/components/GalleryManager.tsx
 "use client";
 
-import React, { useEffect, useRef, useState, ChangeEvent } from "react";
+import React, { useEffect, useState } from "react";
 
 type GalleryItem = {
-  id?: string;
-  _id?: string;
+  id: string;
   url: string;
-  category?: string;
-  caption?: string;
+  category: string;
+  caption: string;
   uploader?: string | null;
-  uploadedAt?: string;
-  isDeleted?: boolean;
+  uploaded_at: string;
+  is_deleted: boolean;
 };
 
-const CATEGORIES = [
-  "Race Day",
-  "Track & Karts",
-  "Customer Moments",
-  "Events",
-  "Highlight",
-];
+type AttachmentPreview = {
+  url: string;
+};
 
 export default function GalleryManager() {
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  // staging
+  const [category, setCategory] = useState("Uncategorized");
+  const [caption, setCaption] = useState("");
   const [files, setFiles] = useState<File[]>([]);
-  const [previews, setPreviews] = useState<string[]>([]);
-  const [captions, setCaptions] = useState<Record<number, string>>({});
-  const [selectedCategory, setSelectedCategory] = useState<string>(CATEGORIES[0]);
+  const [preview, setPreview] = useState<AttachmentPreview[]>([]);
+  const [gallery, setGallery] = useState<GalleryItem[]>([]);
   const [uploading, setUploading] = useState(false);
 
-  // published images
-  const [images, setImages] = useState<GalleryItem[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  // fetch images with category filter
-  const fetchImages = async (category?: string) => {
-    setLoading(true);
+  // Load gallery from API
+  async function loadGallery() {
     try {
-      const query = new URLSearchParams();
-      query.set("page", "1");
-      query.set("limit", "200");
-      if (category && category.toLowerCase() !== "all") query.set("category", category);
-
-      const res = await fetch("/api/gallery?" + query.toString(), { cache: "no-store" });
+      const res = await fetch("/api/gallery");
       const json = await res.json();
-      const items = Array.isArray(json?.data) ? json.data : Array.isArray(json?.items) ? json.items : [];
-      setImages(items);
+      if (json.success) setGallery(json.data || []);
     } catch (err) {
-      console.error("fetchImages error:", err);
-      setImages([]);
-    } finally {
-      setLoading(false);
+      console.error("loadGallery", err);
     }
-  };
+  }
 
   useEffect(() => {
-    fetchImages(selectedCategory);
-    // cleanup previews on unmount
-    return () => previews.forEach((p) => { try { URL.revokeObjectURL(p); } catch {} });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    loadGallery();
   }, []);
 
-  // refetch whenever category changes
-  useEffect(() => {
-    fetchImages(selectedCategory);
-  }, [selectedCategory]);
+  // Preview + file state
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
 
-  // handle file selection
-  const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
-    const selected = e.target.files ? Array.from(e.target.files) : [];
-    if (selected.length === 0) return;
+    const newFiles = Array.from(e.target.files);
+    setFiles((prev) => [...prev, ...newFiles]);
 
-    setFiles((prev) => [...prev, ...selected]);
+    const newPreview = newFiles.map((f) => ({
+      url: URL.createObjectURL(f),
+    }));
 
-    const newPreviews = selected.map((f) => URL.createObjectURL(f));
-    setPreviews((prev) => [...prev, ...newPreviews]);
-
-    // reset input so same file can be reselected later
-    e.currentTarget.value = "";
+    setPreview((prev) => [...prev, ...newPreview]);
   };
 
-  const removeSelectedFile = (index: number) => {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
-    setPreviews((prev) => prev.filter((_, i) => i !== index));
-    setCaptions((prev) => {
-      const copy = { ...prev };
-      delete copy[index];
-      // shift indexes
-      const shifted: Record<number, string> = {};
-      let j = 0;
-      Object.keys(copy)
-        .map((k) => Number(k))
-        .sort((a, b) => a - b)
-        .forEach((k) => {
-          shifted[j++] = copy[k];
-        });
-      return shifted;
+  const removePreview = (i: number) => {
+    setPreview((prev) => prev.filter((_, idx) => idx !== i));
+    setFiles((prev) => prev.filter((_, idx) => idx !== i));
+  };
+
+  // Upload file → Supabase Storage
+  async function uploadImage(file: File): Promise<string | null> {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", "gallery");
+
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      body: formData,
     });
-  };
 
-  const handleCaptionChange = (index: number, value: string) => {
-    setCaptions((prev) => ({ ...prev, [index]: value }));
-  };
+    const json = await res.json();
+    if (!json.success) return null;
+    return json.url;
+  }
 
-  // upload staged files
-  const handleUpload = async () => {
+  // Save gallery item in DB
+  const publish = async () => {
     if (files.length === 0) {
-      alert("No files selected.");
-      return;
-    }
-    if (!selectedCategory) {
-      alert("Please choose a category.");
+      alert("Upload at least one photo");
       return;
     }
 
     setUploading(true);
+
     try {
-      const form = new FormData();
-      // append files and captions (caption_0, caption_1, ...)
-      files.forEach((f, idx) => {
-        form.append("files", f);
-        form.append(`caption_${idx}`, captions[idx] || "");
-      });
+      for (const file of files) {
+        const url = await uploadImage(file);
 
-      // category required
-      form.append("category", selectedCategory);
+        if (!url) continue;
 
-      const res = await fetch("/api/gallery/upload", {
-        method: "POST",
-        body: form,
-      });
+        const payload = {
+          url,
+          category,
+          caption,
+        };
 
-      const json = await res.json();
-      if (!res.ok || !json?.success) {
-        console.error("Upload failed:", json);
-        alert("Upload failed. Check server logs.");
-      } else {
-        // refresh published list (apply same category)
-        await fetchImages(selectedCategory);
+        const res = await fetch("/api/gallery", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
 
-        // cleanup staged previews & files
-        previews.forEach((p) => { try { URL.revokeObjectURL(p); } catch {} });
-        setFiles([]);
-        setPreviews([]);
-        setCaptions({});
-        alert(`Uploaded ${Array.isArray(json.data) ? json.data.length : json.data?.length ?? files.length} item(s).`);
+        const json = await res.json();
+        if (!json.success) console.error("Failed saving item");
       }
+
+      // reset
+      setFiles([]);
+      setPreview([]);
+      setCaption("");
+      setCategory("Uncategorized");
+
+      loadGallery();
     } catch (err) {
-      console.error("Upload error:", err);
-      alert("Upload failed. See console for details.");
+      console.error("publish", err);
+      alert("Failed to upload");
     } finally {
       setUploading(false);
     }
   };
 
-  // delete (soft) — uses id or _id if present
-  const handleDeletePhoto = async (item: GalleryItem) => {
-    const id = (item as any).id || (item as any)._id;
-    if (!id) {
-      if (!item.url) {
-        alert("Cannot delete: no identifier.");
-        return;
-      }
-    }
-    if (!confirm("Delete this photo? (will be soft-deleted)")) return;
+  // Soft delete
+  async function deleteItem(id: string) {
+    if (!confirm("Delete image?")) return;
 
-    try {
-      const body: any = id ? { id } : { url: item.url };
-      const res = await fetch("/api/gallery", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const json = await res.json();
-      if (!res.ok || !json?.success) {
-        console.error("Delete failed:", json);
-        alert("Delete failed");
-      } else {
-        await fetchImages(selectedCategory);
-        alert("Deleted.");
-      }
-    } catch (err) {
-      console.error("Delete error:", err);
-      alert("Delete failed. See console.");
-    }
-  };
+    const res = await fetch(`/api/gallery?id=${id}`, {
+      method: "DELETE",
+    });
+
+    const json = await res.json();
+
+    if (json.success) loadGallery();
+    else alert("Delete failed");
+  }
 
   return (
-    <section className="p-6 max-w-6xl">
-      <h2 className="text-2xl font-bold mb-4 text-red-500">Gallery Manager</h2>
+    <div className="max-w-5xl mx-auto bg-zinc-900/70 border border-red-800 p-8 rounded-2xl">
 
-      {/* Controls */}
-      <div className="flex flex-col md:flex-row md:items-end gap-4 mb-6">
+      <h2 className="text-3xl font-bold text-white mb-6 text-center">
+        📸 Gallery Manager
+      </h2>
+
+      {/* Upload Form */}
+      <div className="space-y-4">
         <div>
-          <label className="block text-sm text-zinc-300 mb-1">Category</label>
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="bg-transparent border border-zinc-700 px-4 py-2 rounded text-white min-w-[220px]"
-          >
-            <option value="all">All</option>
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
+          <label className="text-sm">Category</label>
+          <input
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="w-full p-3 mt-1 bg-black/50 border border-red-700 rounded-lg"
+          />
         </div>
 
         <div>
-          <label className="block text-sm text-zinc-300 mb-1 invisible">choose</label>
-          <div className="flex gap-2">
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="px-4 py-2 bg-red-600 rounded hover:bg-red-700"
-              disabled={uploading}
-            >
-              Choose Photos
-            </button>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-
-            <button
-              onClick={handleUpload}
-              className="px-4 py-2 bg-green-600 rounded hover:bg-green-700"
-              disabled={uploading || files.length === 0}
-            >
-              {uploading ? "Uploading..." : "Upload Selected"}
-            </button>
-          </div>
+          <label className="text-sm">Caption</label>
+          <input
+            value={caption}
+            onChange={(e) => setCaption(e.target.value)}
+            className="w-full p-3 mt-1 bg-black/50 border border-red-700 rounded-lg"
+          />
         </div>
-      </div>
 
-      {/* Staging previews */}
-      {previews.length > 0 && (
-        <div className="mb-6">
-          <h4 className="text-sm text-zinc-300 mb-2">Selected photos (staging)</h4>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {previews.map((src, idx) => (
-              <div key={`${src}-${idx}`} className="relative border rounded overflow-hidden p-2 bg-zinc-900">
-                <img src={src} className="w-full h-40 object-cover rounded" alt={`preview-${idx}`} />
-                <input
-                  type="text"
-                  placeholder="Caption (optional)"
-                  value={captions[idx] || ""}
-                  onChange={(e) => handleCaptionChange(idx, e.target.value)}
-                  className="mt-2 w-full p-2 bg-transparent border border-zinc-700 rounded text-white"
-                />
+        <div>
+          <label className="text-sm">Choose Images</label>
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={handleFileChange}
+            className="w-full p-2 bg-black/50 border border-red-700 rounded-lg mt-1"
+          />
+        </div>
+
+        {/* Preview */}
+        {preview.length > 0 && (
+          <div className="grid grid-cols-3 md:grid-cols-4 gap-3 mt-3">
+            {preview.map((p, i) => (
+              <div key={i} className="relative rounded-lg overflow-hidden border border-red-700">
                 <button
-                  onClick={() => removeSelectedFile(idx)}
-                  className="mt-2 w-full bg-red-600 py-1 rounded text-white"
+                  onClick={() => removePreview(i)}
+                  className="absolute right-1 top-1 bg-black/70 px-2 py-1 rounded"
                 >
-                  Remove
+                  ✖
                 </button>
+                <img src={p.url} className="w-full h-32 object-cover" />
               </div>
             ))}
           </div>
-        </div>
-      )}
-
-      {/* Published gallery (admin view) */}
-      <div>
-        <h3 className="mb-3 text-lg">Published Gallery ({images.length})</h3>
-
-        {loading ? (
-          <p>Loading...</p>
-        ) : images.length === 0 ? (
-          <p className="italic text-zinc-400">No images</p>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {images.map((p) => {
-              const id = (p as any).id ?? (p as any)._id ?? p.url;
-              return (
-                <div key={id} className="relative group bg-zinc-900 rounded overflow-hidden">
-                  <img src={p.url} className="w-full h-40 object-cover" alt={p.caption || "gallery"} />
-                  {p.caption && <div className="p-2 text-sm text-white">{p.caption}</div>}
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition flex gap-2">
-                    <button
-                      onClick={() => window.open(p.url, "_blank")}
-                      className="mr-2 bg-white/10 px-2 py-1 rounded"
-                    >
-                      Open
-                    </button>
-                    <button
-                      onClick={() => handleDeletePhoto(p)}
-                      className="bg-red-600 px-2 py-1 rounded text-white"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                  <div className="absolute bottom-2 left-2 text-xs bg-black/50 px-1 py-0.5 rounded text-zinc-200">
-                    {p.category || ""}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
         )}
+
+        <button
+          onClick={publish}
+          disabled={uploading}
+          className="w-full bg-red-600 hover:bg-red-700 py-3 rounded-lg text-white"
+        >
+          {uploading ? "Uploading..." : "Upload to Gallery"}
+        </button>
       </div>
-    </section>
+
+      {/* Gallery List */}
+      <h3 className="text-xl font-semibold text-red-400 mt-10 mb-4">Uploaded Images</h3>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {gallery.map((item) => (
+          <div key={item.id} className="relative border border-red-700 rounded-lg overflow-hidden">
+            <img
+              src={item.url}
+              className="w-full h-32 object-cover"
+            />
+
+            <div className="absolute bottom-1 left-1 text-xs bg-black/60 px-2 py-1 rounded">
+              {item.category}
+            </div>
+
+            <button
+              onClick={() => deleteItem(item.id)}
+              className="absolute right-2 top-2 bg-black/70 text-red-400 px-2 py-1 rounded"
+            >
+              Delete
+            </button>
+          </div>
+        ))}
+      </div>
+
+    </div>
   );
 }

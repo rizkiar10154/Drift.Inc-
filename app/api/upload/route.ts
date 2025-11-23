@@ -1,35 +1,41 @@
+// app/api/upload/route.ts
 import { NextResponse } from "next/server";
-import path from "path";
-import { promises as fs } from "fs";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
     const formData = await req.formData();
-    const file = formData.get("file") as File;
+    const file = formData.get("file") as File | null;
+    const folder = (formData.get("folder") as string) || "gallery";
+    const filename = formData.get("filename") as string | null;
 
-    if (!file) {
-      return NextResponse.json({ success: false, message: "No file uploaded" });
-    }
+    if (!file)
+      return NextResponse.json({ success: false, message: "Missing file" }, { status: 400 });
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const uploadDir = path.join(process.cwd(), "public/uploads");
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
 
-    // Ensure folder exists
-    await fs.mkdir(uploadDir, { recursive: true });
+    const name = filename || `${Date.now()}-${file.name || "upload"}`;
 
-    // Create unique filename
-    const filename = `${Date.now()}-${file.name}`;
-    const filepath = path.join(uploadDir, filename);
+    const { data, error } = await supabaseAdmin.storage
+      .from(folder)
+      .upload(name, buffer, { upsert: false });
 
-    // Save the file
-    await fs.writeFile(filepath, buffer);
+    if (error)
+      return NextResponse.json({ success: false, message: error.message }, { status: 500 });
 
-    // Return the public URL
-    const publicUrl = `/uploads/${filename}`;
-    return NextResponse.json({ success: true, url: publicUrl });
-  } catch (error) {
-    console.error("Upload failed:", error);
-    return NextResponse.json({ success: false, message: "Upload error" });
+    // ✔ FIXED HERE
+    const { data: publicData } = supabaseAdmin.storage
+      .from(folder)
+      .getPublicUrl(data.path);
+
+    const publicUrl = publicData.publicUrl;
+
+    return NextResponse.json({ success: true, url: publicUrl, path: data.path });
+  } catch (err) {
+    console.error("UPLOAD ERROR:", err);
+    return NextResponse.json({ success: false, message: "Upload failed" }, { status: 500 });
   }
 }
