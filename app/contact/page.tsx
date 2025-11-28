@@ -10,7 +10,7 @@ export default function Contact() {
       {/* Content */}
       <div className="relative z-10 w-full max-w-3xl">
         <div className="text-center mb-10">
-          <h1 className="text-4xl md:text-5xl font-bold text-red-600 drop-shadow-lg">
+          <h1 className="text-4xl md:text-5xl font-bold text-white-600 drop-shadow-lg">
             Contact Us
           </h1>
           <p className="mt-4 text-gray-300 text-lg">
@@ -18,40 +18,54 @@ export default function Contact() {
           </p>
         </div>
 
-        {/* Info & Form */}
+        {/* Info Section */}
         <div className="bg-black/60 border border-red-800 rounded-2xl p-8 md:p-12 shadow-lg backdrop-blur-md">
           <h2 className="text-2xl font-semibold mb-6 text-red-500">Reach Us</h2>
           <div className="space-y-4 text-gray-300">
-            <p>📍 <span className="text-white font-medium">Central Park, Jakarta</span></p>
-            <p>🕒 Open Daily | 10:00 AM – 10:00 PM</p>
-            <p>📧 contact@driftinc.id</p>
-            <p>📱 WhatsApp: +62 812-3456-7890</p>
-          </div>
+            <p>
+              📍 <span className="text-white font-medium">Central Park, Jakarta</span>
+            </p>
 
-          <form className="mt-8 space-y-4">
-            <input
-              type="text"
-              placeholder="Your Name"
-              className="w-full p-3 rounded-lg bg-black border border-red-800 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-600"
-            />
-            <input
-              type="email"
-              placeholder="Your Email"
-              className="w-full p-3 rounded-lg bg-black border border-red-800 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-600"
-            />
-            <textarea
-              placeholder="Your Message"
-              rows={4}
-              className="w-full p-3 rounded-lg bg-black border border-red-800 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-600"
-            ></textarea>
-            <button
-              type="submit"
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition-all duration-300 shadow-lg hover:shadow-red-500/40 animate-heartbeat"
-            >
-              Send Message
-            </button>
-          </form>
+            <p>🕒 Open Daily | 10:00 AM – 10:00 PM</p>
+
+            {/* Email Clickable */}
+            <p>
+              📧 Email:{" "}
+              <a
+                href="mailto:driftinc.dcp@gmail.com"
+                className="text-red-400 hover:text-red-300 underline ml-1"
+              >
+                driftinc.dcp@gmail.com
+              </a>
+            </p>
+
+            {/* WhatsApp Clickable */}
+            <p>
+              📱 WhatsApp:{" "}
+              <a
+                href="https://wa.me/6281234567890"
+                className="text-red-400 hover:text-red-300 underline"
+                target="_blank"
+              >
+                +62 812-3456-7890
+              </a>
+            </p>
+            
+            {/* WhatsApp Clickable */}
+            <p>
+             📸 Instagram:{" "}
+              <a
+                href="https://www.instagram.com/driftinc.jkt?igsh=dmc2Ynd2ems0Nmdo"
+                className="text-red-400 hover:text-red-300 underline"
+                target="_blank"
+              >
+                Drift.Inc Jakarta
+              </a>
+            </p>
+          </div>
         </div>
+
+        
 
         {/* Map */}
         <div className="w-full mt-10 rounded-2xl overflow-hidden border border-red-800 shadow-lg">

@@ -3,7 +3,7 @@ import EventCalendarList from "@/app/components/EventCalendar";
 
 export default function EventsPage() {
   return (
-    <main className="relative min-h-screen bg-fixed bg-cover bg-center text-white" style={{ backgroundImage: "url('/bg-track.jpg')" }}>
+    <main className="relative min-h-screen bg-fixed bg-cover bg-center text-white" style={{ backgroundImage: "url('/track-bg.jpg')" }}>
       <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] z-0" />
       <div className="relative z-10 min-h-screen flex flex-col items-center bg-black/30 backdrop-blur-md">
         <div className="text-center mt-28 mb-3">

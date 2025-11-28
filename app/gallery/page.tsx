@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { GALLERY_CATEGORIES } from "@/constants/categories";
 
@@ -16,14 +16,19 @@ export default function GalleryPage() {
   const [images, setImages] = useState<GalleryItem[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [categoryFilter, setCategoryFilter] = useState("All");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
+  // Prevent double-fetch on mount (Strict Mode)
+  const initialRender = useRef(true);
+
   const CATEGORY_OPTIONS = ["All", ...GALLERY_CATEGORIES];
 
-  // Fetch gallery from API
+  // --- Fetch API ---
   const fetchGallery = useCallback(async () => {
+    if (loading || !hasMore) return;
+
     setLoading(true);
 
     const params = new URLSearchParams();
@@ -40,13 +45,21 @@ export default function GalleryPage() {
       });
 
       const json = await res.json();
+
       if (json.success) {
         const newData: GalleryItem[] = json.data;
 
+        // No more data
         if (newData.length === 0) {
           setHasMore(false);
         } else {
-          setImages((prev) => [...prev, ...newData]);
+          // Merge + dedupe
+          setImages((prev) => {
+            const merged = [...prev, ...newData];
+            const unique = new Map<string, GalleryItem>();
+            merged.forEach((item) => unique.set(item.id, item));
+            return Array.from(unique.values());
+          });
         }
       }
     } catch (err) {
@@ -54,28 +67,29 @@ export default function GalleryPage() {
     }
 
     setLoading(false);
-  }, [categoryFilter, page]);
+  }, [page, categoryFilter, hasMore, loading]);
 
-  // Reset when category filter changes
+  // --- Reset when category changes ---
   useEffect(() => {
     setImages([]);
     setPage(1);
     setHasMore(true);
   }, [categoryFilter]);
 
-  // Fetch when filter or page changes
+  // --- Fetch when page or category changes ---
   useEffect(() => {
+    if (initialRender.current) {
+      initialRender.current = false;
+      return; // avoid strict mode double-fetch
+    }
     fetchGallery();
-  }, [fetchGallery]);
+  }, [page, categoryFilter]);
 
-  // Infinite scroll
+  // --- Infinite Scroll ---
   useEffect(() => {
     const onScroll = () => {
-      if (
-        window.innerHeight + window.scrollY >= document.body.offsetHeight - 300 &&
-        !loading &&
-        hasMore
-      ) {
+      const bottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 300;
+      if (bottom && !loading && hasMore) {
         setPage((p) => p + 1);
       }
     };
@@ -84,24 +98,20 @@ export default function GalleryPage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, [loading, hasMore]);
 
-  // Modal navigation
   const nextImage = () => {
-    if (selectedImageIndex === null) return;
-    if (selectedImageIndex < images.length - 1) {
+    if (selectedImageIndex !== null && selectedImageIndex < images.length - 1) {
       setSelectedImageIndex(selectedImageIndex + 1);
     }
   };
 
   const prevImage = () => {
-    if (selectedImageIndex === null) return;
-    if (selectedImageIndex > 0) {
+    if (selectedImageIndex !== null && selectedImageIndex > 0) {
       setSelectedImageIndex(selectedImageIndex - 1);
     }
   };
 
   return (
     <section className="relative min-h-screen p-16 text-white">
-
       {/* Background */}
       <div className="absolute inset-0 bg-[url('/track-bg.jpg')] bg-cover bg-center opacity-40"></div>
       <div className="absolute inset-0 bg-black/40"></div>
@@ -111,7 +121,7 @@ export default function GalleryPage() {
           Drift.Inc Gallery
         </h1>
 
-        {/* CATEGORY FILTER */}
+        {/* Category Filter */}
         <div className="flex justify-center gap-6 mb-12 flex-wrap">
           <select
             value={categoryFilter}
@@ -119,20 +129,22 @@ export default function GalleryPage() {
             className="bg-black/60 border border-red-700 text-gray-200 px-4 py-2 rounded-lg"
           >
             {CATEGORY_OPTIONS.map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
             ))}
           </select>
         </div>
 
-        {/* GALLERY GRID */}
+        {/* Gallery Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {images.map((img, i) => (
+          {images.map((img, index) => (
             <motion.div
               key={img.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="overflow-hidden rounded-xl border border-red-800/40 hover:border-red-500 transition group cursor-pointer relative"
-              onClick={() => setSelectedImageIndex(i)}
+              onClick={() => setSelectedImageIndex(index)}
             >
               <img
                 src={img.url}
@@ -149,7 +161,7 @@ export default function GalleryPage() {
           ))}
         </div>
 
-        {/* LOADING INDICATOR */}
+        {/* Loading */}
         {loading && (
           <div className="text-center text-gray-400 py-10 animate-pulse">
             Loading more photos...
@@ -157,7 +169,7 @@ export default function GalleryPage() {
         )}
       </div>
 
-      {/* MODAL */}
+      {/* Modal */}
       <AnimatePresence>
         {selectedImageIndex !== null && (
           <motion.div
@@ -173,16 +185,21 @@ export default function GalleryPage() {
               className="max-h-[90vh] max-w-[90vw] object-contain rounded-xl"
             />
 
-            {/* NAVIGATION */}
             <button
               className="absolute left-10 text-white text-4xl"
-              onClick={(e) => { e.stopPropagation(); prevImage(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                prevImage();
+              }}
             >
               ‹
             </button>
             <button
               className="absolute right-10 text-white text-4xl"
-              onClick={(e) => { e.stopPropagation(); nextImage(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                nextImage();
+              }}
             >
               ›
             </button>

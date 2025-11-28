@@ -22,7 +22,6 @@ export default function Navbar() {
     { href: "/leaderboards", label: "Leaderboards" },
     { href: "/events", label: "Events" }, // ✅ new Events page
     { href: "/gallery", label: "Gallery" },
-    { href: "/level", label: "Level" },
     { href: "/contact", label: "Contact" },
     { href: "/about", label: "About" },
   ];
