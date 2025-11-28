@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { GALLERY_CATEGORIES } from "@/constants/categories";
 
@@ -20,11 +20,20 @@ export default function GalleryPage() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
+  const abortRef = useRef<AbortController | null>(null);
+
   const CATEGORY_OPTIONS = ["All", ...GALLERY_CATEGORIES];
 
-  // Fetch Gallery API
   const fetchGallery = useCallback(async () => {
     if (loading || !hasMore) return;
+
+    // Cancel previous request
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
+
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     setLoading(true);
 
@@ -39,6 +48,7 @@ export default function GalleryPage() {
     try {
       const res = await fetch(`/api/gallery?${params.toString()}`, {
         cache: "no-store",
+        signal: controller.signal,
       });
 
       const json = await res.json();
@@ -49,7 +59,6 @@ export default function GalleryPage() {
         if (newData.length === 0) {
           setHasMore(false);
         } else {
-          // merge + dedupe
           setImages((prev) => {
             const merged = [...prev, ...newData];
             const unique = new Map<string, GalleryItem>();
@@ -58,26 +67,29 @@ export default function GalleryPage() {
           });
         }
       }
-    } catch (err) {
-      console.error("Error fetching gallery:", err);
+    } catch (err: any) {
+      if (err.name !== "AbortError") {
+        console.error("Error fetching gallery:", err);
+      }
     }
 
     setLoading(false);
   }, [page, categoryFilter, loading, hasMore]);
 
-  // Reset on category change
+  // Reset when category changes
   useEffect(() => {
+    if (abortRef.current) abortRef.current.abort();
     setImages([]);
     setPage(1);
     setHasMore(true);
   }, [categoryFilter]);
 
-  // Always fetch on page/category change (IMPORTANT FIX)
+  // Fetch
   useEffect(() => {
     fetchGallery();
   }, [page, categoryFilter, fetchGallery]);
 
-  // Infinite scroll
+  // Infinite Scroll
   useEffect(() => {
     const onScroll = () => {
       const bottom =
@@ -106,7 +118,6 @@ export default function GalleryPage() {
 
   return (
     <section className="relative min-h-screen p-16 text-white">
-      {/* Background */}
       <div className="absolute inset-0 bg-[url('/track-bg.jpg')] bg-cover bg-center opacity-40"></div>
       <div className="absolute inset-0 bg-black/40"></div>
 
@@ -115,7 +126,6 @@ export default function GalleryPage() {
           Drift.Inc Gallery
         </h1>
 
-        {/* Category Filter */}
         <div className="flex justify-center gap-6 mb-12 flex-wrap">
           <select
             value={categoryFilter}
@@ -130,7 +140,6 @@ export default function GalleryPage() {
           </select>
         </div>
 
-        {/* Gallery Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {images.map((img, index) => (
             <motion.div
@@ -155,7 +164,6 @@ export default function GalleryPage() {
           ))}
         </div>
 
-        {/* Loading Indicator */}
         {loading && (
           <div className="text-center text-gray-400 py-10 animate-pulse">
             Loading more photos...
@@ -163,7 +171,6 @@ export default function GalleryPage() {
         )}
       </div>
 
-      {/* Modal Viewer */}
       <AnimatePresence>
         {selectedImageIndex !== null && (
           <motion.div
