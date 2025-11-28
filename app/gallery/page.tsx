@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { GALLERY_CATEGORIES } from "@/constants/categories";
 
@@ -20,12 +20,9 @@ export default function GalleryPage() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
-  // Prevent double-fetch on mount (Strict Mode)
-  const initialRender = useRef(true);
-
   const CATEGORY_OPTIONS = ["All", ...GALLERY_CATEGORIES];
 
-  // --- Fetch API ---
+  // Fetch Gallery API
   const fetchGallery = useCallback(async () => {
     if (loading || !hasMore) return;
 
@@ -49,11 +46,10 @@ export default function GalleryPage() {
       if (json.success) {
         const newData: GalleryItem[] = json.data;
 
-        // No more data
         if (newData.length === 0) {
           setHasMore(false);
         } else {
-          // Merge + dedupe
+          // merge + dedupe
           setImages((prev) => {
             const merged = [...prev, ...newData];
             const unique = new Map<string, GalleryItem>();
@@ -67,28 +63,26 @@ export default function GalleryPage() {
     }
 
     setLoading(false);
-  }, [page, categoryFilter, hasMore, loading]);
+  }, [page, categoryFilter, loading, hasMore]);
 
-  // --- Reset when category changes ---
+  // Reset on category change
   useEffect(() => {
     setImages([]);
     setPage(1);
     setHasMore(true);
   }, [categoryFilter]);
 
-  // --- Fetch when page or category changes ---
+  // Always fetch on page/category change (IMPORTANT FIX)
   useEffect(() => {
-    if (initialRender.current) {
-      initialRender.current = false;
-      return; // avoid strict mode double-fetch
-    }
     fetchGallery();
-  }, [page, categoryFilter]);
+  }, [page, categoryFilter, fetchGallery]);
 
-  // --- Infinite Scroll ---
+  // Infinite scroll
   useEffect(() => {
     const onScroll = () => {
-      const bottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 300;
+      const bottom =
+        window.innerHeight + window.scrollY >= document.body.offsetHeight - 300;
+
       if (bottom && !loading && hasMore) {
         setPage((p) => p + 1);
       }
@@ -161,7 +155,7 @@ export default function GalleryPage() {
           ))}
         </div>
 
-        {/* Loading */}
+        {/* Loading Indicator */}
         {loading && (
           <div className="text-center text-gray-400 py-10 animate-pulse">
             Loading more photos...
@@ -169,7 +163,7 @@ export default function GalleryPage() {
         )}
       </div>
 
-      {/* Modal */}
+      {/* Modal Viewer */}
       <AnimatePresence>
         {selectedImageIndex !== null && (
           <motion.div
@@ -194,6 +188,7 @@ export default function GalleryPage() {
             >
               ‹
             </button>
+
             <button
               className="absolute right-10 text-white text-4xl"
               onClick={(e) => {
