@@ -3,6 +3,10 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+export const preferredRegion = "sin1"; // or closest region
+
 const BUCKET = "gallery";
 
 // ===========================
@@ -23,18 +27,15 @@ export async function GET(req: Request) {
       .select("*")
       .eq("is_deleted", false)
       .order("uploaded_at", { ascending: false })
-      .range(from, to); // ✔ Supabase v2-safe pagination
+      .range(from, to);
 
     if (category) query = query.eq("category", category);
 
     const { data: rows, error: listErr } = await query;
     if (listErr) throw listErr;
 
-    // ✔ Remove duplicated rows by ID
     const unique = new Map();
-    (rows || []).forEach((r: any) => {
-      unique.set(r.id, r);
-    });
+    (rows || []).forEach((r: any) => unique.set(r.id, r));
 
     const items = Array.from(unique.values()).map((r: any) => ({
       id: r.id,
@@ -45,7 +46,6 @@ export async function GET(req: Request) {
       is_deleted: r.is_deleted ?? false,
     }));
 
-    // ------- STATS -------
     const { count } = await supabaseAdmin
       .from("gallery")
       .select("*", { count: "exact", head: true })
@@ -65,13 +65,13 @@ export async function GET(req: Request) {
         published: count ?? 0,
         lastUpload: lastRow?.uploaded_at ?? "—",
       },
-      data: items, // ✔ return ONLY "data" (admin & customer)
+      data: items,
     });
   } catch (error: any) {
     console.error("GET /api/gallery error:", error);
     return NextResponse.json(
       { success: false, message: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -80,6 +80,11 @@ export async function GET(req: Request) {
 // POST — insert
 // ===========================
 export async function POST(req: Request) {
+  // ---- DEBUG LOGS ----
+  console.log("⚡ SERVICE ROLE LOADED? =>", !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+  console.log("⚡ RUNTIME =>", process.env.NEXT_RUNTIME);
+  console.log("⚡ SUPABASE URL =>", process.env.NEXT_PUBLIC_SUPABASE_URL);
+
   try {
     const body = await req.json();
     const { url, category, caption } = body;
@@ -90,13 +95,17 @@ export async function POST(req: Request) {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("❌ INSERT ERROR:", error);
+      throw error;
+    }
 
     return NextResponse.json({ success: true, item: data });
   } catch (error: any) {
+    console.error("POST /api/gallery error:", error);
     return NextResponse.json(
       { success: false, message: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -110,7 +119,7 @@ export async function DELETE(req: Request) {
     if (!id) {
       return NextResponse.json(
         { success: false, message: "Missing id" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -122,7 +131,6 @@ export async function DELETE(req: Request) {
 
     if (!row?.url) throw new Error("URL not found");
 
-    // parse storage path
     const urlObj = new URL(row.url);
     const marker = `/object/public/${BUCKET}/`;
     const idx = urlObj.pathname.indexOf(marker);
@@ -139,7 +147,7 @@ export async function DELETE(req: Request) {
     console.error("DELETE /api/gallery error:", error);
     return NextResponse.json(
       { success: false, message: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
