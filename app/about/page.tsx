@@ -8,7 +8,7 @@ export default function About() {
   return (
     <section className="relative flex flex-col items-center min-h-screen bg-dark text-light overflow-hidden">
 
-      {/* unified background */}
+      {/* Background */}
       <div className="absolute inset-0 bg-[url('/track-bg.jpg')] bg-cover bg-center opacity-70 brightness-110"></div>
       <div className="absolute inset-0 bg-black/60"></div>
 
@@ -23,8 +23,20 @@ export default function About() {
           />
         </div>
 
-        {/* Minimap */}
-        <div className="w-full flex justify-center items-center mb-20">
+        {/* ABOUT TEXT FIRST */}
+        <p className="text-lg md:text-xl text-gray-200 leading-relaxed mb-6">
+          Welcome to <span className="text-red-500 font-semibold">Drift.Inc</span> — Jakarta’s premier go-kart experience.
+          We combine speed, precision, and luxury to deliver the ultimate racing thrill for both intermediate and advanced drivers.
+        </p>
+
+        <p className="text-lg md:text-xl text-gray-300 leading-relaxed mb-16">
+          Located in <span className="font-semibold text-red-500">Central Park Jakarta</span>, 
+          our track is equipped with advanced timing systems. Whether you’re chasing the leaderboard 
+          or enjoying casual laps with friends, every moment here is built for adrenaline and style.
+        </p>
+
+        {/* TRACK MOVED HERE BELOW THE ABOUT TEXT */}
+        <div className="w-full flex justify-center items-center mb-20 -translate-x-24">
           <svg
             viewBox="0 0 3200 4000"
             className="w-full max-w-[220px] h-auto overflow-visible mx-auto"
@@ -39,6 +51,11 @@ export default function About() {
               strokeLinecap="round"
             />
 
+            {/* ⭐ Add this here ⭐ */}
+  <g transform="translate(2799.57, 3367.19) rotate (68)">
+    <rect x="-150" y="-40" width="300" height="60" fill="red" />
+  </g>
+
             {/* Karts */}
             {[...Array(8)].map((_, i) => (
               <image
@@ -50,26 +67,10 @@ export default function About() {
                 y="-125"
                 style={{ opacity: 0 }}
               >
-                {/* Fade-in */}
-                <animate
-                  attributeName="opacity"
-                  values="0;1"
-                  begin="0.5s"
-                  dur="0.2s"
-                  fill="freeze"
-                />
-
-                {/* Movement along track */}
-                <animateMotion
-                  dur={`${speeds[i]}s`}
-                  repeatCount="indefinite"
-                  rotate="auto"
-                  begin="0.5s"
-                >
+                <animate attributeName="opacity" values="0;1" begin="0.5s" dur="0.2s" fill="freeze" />
+                <animateMotion dur={`${speeds[i]}s`} repeatCount="indefinite" rotate="auto" begin="0.5s">
                   <mpath href="#trackPath" />
                 </animateMotion>
-
-                {/* Fix kart orientation so it faces forward */}
                 <animateTransform
                   attributeName="transform"
                   type="rotate"
@@ -84,18 +85,6 @@ export default function About() {
           </svg>
         </div>
 
-        {/* About text */}
-        <p className="text-lg md:text-xl text-gray-200 leading-relaxed mb-6">
-          Welcome to <span className="text-red-500 font-semibold">Drift.Inc</span> — Jakarta’s premier go-kart experience.
-          We combine speed, precision, and luxury to deliver the ultimate racing thrill for both intermediate and advanced drivers.
-        </p>
-
-        <p className="text-lg md:text-xl text-gray-300 leading-relaxed mb-16">
-          Located in <span className="font-semibold text-red-500">Central Park Jakarta</span>,
-          our track is equipped with advanced timing systems. Whether you’re chasing the leaderboard or enjoying casual laps
-          with friends, every moment here is built for adrenaline and style.
-        </p>
-
         {/* LEVEL SECTION */}
         <div className="w-full py-10 mt-4">
           <h2 className="text-4xl md:text-5xl font-bold text-white drop-shadow-[0_2px_10px_rgba(255,0,0,0.5)] mb-8">
@@ -103,41 +92,24 @@ export default function About() {
           </h2>
 
           <p className="text-gray-300 text-lg mb-16 max-w-3xl mx-auto">
-            Choose your level and experience the thrill — whether you’re an adrenaline-driven racer or a rising young talent.
+            Whether you’re an adrenaline-driven racer or a rising young talent.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
 
             {/* Intermediate */}
             <div className="group relative overflow-hidden rounded-2xl border-2 border-red-800 bg-black/40 shadow-[0_0_20px_rgba(255,0,0,0.15)] hover:shadow-[0_0_35px_rgba(255,0,0,0.4)] transition-all duration-500 p-8">
-              <h2 className="text-3xl font-bold text-red-500 mb-4 group-hover:scale-105 transition-transform duration-300">
-                Intermediate
-              </h2>
+              <h2 className="text-3xl font-bold text-red-500 mb-4">Intermediate</h2>
               <p className="text-gray-300 leading-relaxed">
-                Perfect for younger racers with a height minimum 120 cm and a maximum weight of 70 kg.
-                This level introduces them to the excitement of go-karting in a safe and controlled environment.
-                Experience real track driving, with safety and fun as top priority.
-              </p>
-              <div className="mt-6 text-sm text-gray-400">
-                Age: <span className="text-white font-semibold">Under 15 y.o</span> <br />
-                Height: <span className="text-white font-semibold">Below 150 cm</span>
-              </div>
+Perfect for younger racers with a height minimum 120 cm and a maximum weight of 70 kg. This level introduces them to the excitement of go-karting in a safe and controlled environment. Experience real track driving, with safety and fun as top priority.              </p>
             </div>
 
             {/* Advance */}
             <div className="group relative overflow-hidden rounded-2xl border-2 border-red-800 bg-black/40 shadow-[0_0_20px_rgba(255,0,0,0.15)] hover:shadow-[0_0_35px_rgba(255,0,0,0.4)] transition-all duration-500 p-8">
-              <h2 className="text-3xl font-bold text-red-500 mb-4 group-hover:scale-105 transition-transform duration-300">
-                Advance
-              </h2>
+              <h2 className="text-3xl font-bold text-red-500 mb-4">Advance</h2>
               <p className="text-gray-300 leading-relaxed">
-                Designed for experienced drivers with a minimum height of 155 cm and a maximum weight of 100 kg.
-                Push your limits with faster karts, tighter corners, and the full Drift.Inc track experience.
-                Feel the adrenaline rush of competitive racing in its purest form.
-              </p>
-              <div className="mt-6 text-sm text-gray-400">
-                Age: <span className="text-white font-semibold">15 y.o and above</span> <br />
-                Height: <span className="text-white font-semibold">150 cm and above</span>
-              </div>
+Designed for experienced drivers with a minimum height of 155 cm and a maximum weight of 100 kg. Push your limits with faster karts, tighter corners, and the full Drift.Inc track experience. Feel the adrenaline rush of competitive racing in its purest form.              </p>
+              
             </div>
 
           </div>

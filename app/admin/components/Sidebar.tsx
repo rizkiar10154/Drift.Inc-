@@ -16,8 +16,6 @@ export default function Sidebar({ section, setSection }: SidebarProps) {
     { key: "home", label: "Home", icon: "🏠" },
     { key: "gallery", label: "Gallery", icon: "🖼️" },
     { key: "events", label: "Events", icon: "🗓️" },
-    { key: "about", label: "About", icon: "📖" },
-    { key: "contact", label: "Contact", icon: "☎️" },
   ];
 
   return (

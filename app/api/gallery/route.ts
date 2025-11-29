@@ -5,12 +5,12 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
-export const preferredRegion = "sin1"; // or closest region
+export const preferredRegion = "sin1";
 
 const BUCKET = "gallery";
 
 // ===========================
-// GET — pagination without duplicates
+// GET — list gallery items
 // ===========================
 export async function GET(req: Request) {
   try {
@@ -31,8 +31,8 @@ export async function GET(req: Request) {
 
     if (category) query = query.eq("category", category);
 
-    const { data: rows, error: listErr } = await query;
-    if (listErr) throw listErr;
+    const { data: rows, error } = await query;
+    if (error) throw error;
 
     const unique = new Map();
     (rows || []).forEach((r: any) => unique.set(r.id, r));
@@ -71,20 +71,15 @@ export async function GET(req: Request) {
     console.error("GET /api/gallery error:", error);
     return NextResponse.json(
       { success: false, message: error.message },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
 
 // ===========================
-// POST — insert
+// POST — insert new gallery record
 // ===========================
 export async function POST(req: Request) {
-  // ---- DEBUG LOGS ----
-  console.log("⚡ SERVICE ROLE LOADED? =>", !!process.env.SUPABASE_SERVICE_ROLE_KEY);
-  console.log("⚡ RUNTIME =>", process.env.NEXT_RUNTIME);
-  console.log("⚡ SUPABASE URL =>", process.env.NEXT_PUBLIC_SUPABASE_URL);
-
   try {
     const body = await req.json();
     const { url, category, caption } = body;
@@ -95,23 +90,51 @@ export async function POST(req: Request) {
       .select()
       .single();
 
-    if (error) {
-      console.error("❌ INSERT ERROR:", error);
-      throw error;
-    }
+    if (error) throw error;
 
     return NextResponse.json({ success: true, item: data });
   } catch (error: any) {
     console.error("POST /api/gallery error:", error);
     return NextResponse.json(
       { success: false, message: error.message },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
 
 // ===========================
-// DELETE — DB + storage
+// PATCH — update caption
+// ===========================
+export async function PATCH(req: Request) {
+  try {
+    const { id, caption } = await req.json();
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, message: "Missing id" },
+        { status: 400 }
+      );
+    }
+
+    const { error } = await supabaseAdmin
+      .from("gallery")
+      .update({ caption })
+      .eq("id", id);
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error("PATCH /api/gallery error:", error);
+    return NextResponse.json(
+      { success: false, message: error.message },
+      { status: 500 }
+    );
+  }
+}
+
+// ===========================
+// DELETE — remove from DB + storage
 // ===========================
 export async function DELETE(req: Request) {
   try {
@@ -119,7 +142,7 @@ export async function DELETE(req: Request) {
     if (!id) {
       return NextResponse.json(
         { success: false, message: "Missing id" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -147,7 +170,7 @@ export async function DELETE(req: Request) {
     console.error("DELETE /api/gallery error:", error);
     return NextResponse.json(
       { success: false, message: error.message },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

@@ -41,7 +41,8 @@ export default function AdminPage() {
         const galleryData = await galleryRes.json();
         setStats((prev) => ({
           ...prev,
-          galleryCount: galleryData.stats?.published ??
+          galleryCount:
+            galleryData.stats?.published ??
             (Array.isArray(galleryData.items)
               ? galleryData.items.length
               : 0),
@@ -65,7 +66,6 @@ export default function AdminPage() {
             : 0,
         }));
       }
-
     } catch (err) {
       console.error("Failed loading admin stats:", err);
     }
@@ -82,62 +82,48 @@ export default function AdminPage() {
       <div className="absolute inset-0 bg-[url('/track-bg.jpg')] bg-cover bg-center opacity-40"></div>
       <div className="absolute inset-0 bg-black/40"></div>
 
+      {/* Sidebar */}
       <div className="relative z-10">
         <Sidebar section={section} setSection={setSection} />
       </div>
 
+      {/* Content */}
       <div className="relative z-10 flex-1 p-8 pt-17 overflow-y-auto">
-
         {/* HOME DASHBOARD */}
         {section === "home" && (
-          <div className="max-w-6xl mx-auto text-center">
-            <h1 className="text-4xl font-bold mb-10">Drift.Inc Admin Dashboard</h1>
+          <div className="w-full flex justify-center">
+            <div className="max-w-4xl w-full text-center">
+              <h1 className="text-4xl font-bold mb-10">
+                Drift.Inc Admin Dashboard
+              </h1>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 justify-items-center mx-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 justify-items-center">
+                {/* Gallery Count */}
+                <button
+                  onClick={() => setSection("gallery")}
+                  className="bg-zinc-900/80 border border-red-700 p-6 rounded-2xl w-full max-w-[250px]"
+                >
+                  <h2 className="text-gray-400 text-sm uppercase">
+                    Gallery Images
+                  </h2>
+                  <p className="text-4xl font-bold text-red-400 mt-2">
+                    {stats.galleryCount}
+                  </p>
+                </button>
 
-              {/* Gallery Count */}
-              <button
-                onClick={() => setSection("gallery")}
-                className="bg-zinc-900/80 border border-red-700 p-6 rounded-2xl w-full max-w-[250px]"
-              >
-                <h2 className="text-gray-400 text-sm uppercase">Gallery Images</h2>
-                <p className="text-4xl font-bold text-red-400 mt-2">
-                  {stats.galleryCount}
-                </p>
-              </button>
-
-              {/* About */}
-              <button
-                onClick={() => setSection("about")}
-                className="bg-zinc-900/80 border border-red-700 p-6 rounded-2xl w-full max-w-[250px]"
-              >
-                <h2 className="text-gray-400 text-sm uppercase">About Page</h2>
-                <p className="text-2xl font-semibold text-white mt-2">
-                  {stats.aboutWords} words
-                </p>
-              </button>
-
-              {/* Contact */}
-              <button
-                onClick={() => setSection("contact")}
-                className="bg-zinc-900/80 border border-red-700 p-6 rounded-2xl w-full max-w-[250px]"
-              >
-                <h2 className="text-gray-400 text-sm uppercase">Contact Email</h2>
-                <p className="text-sm text-red-300 mt-2 truncate max-w-40">
-                  {stats.contactEmail}
-                </p>
-              </button>
-
-              {/* Events */}
-              <button
-                onClick={() => setSection("events")}
-                className="bg-zinc-900/80 border border-red-700 p-6 rounded-2xl w-full max-w-[250px]"
-              >
-                <h2 className="text-gray-400 text-sm uppercase">Events Created</h2>
-                <p className="text-4xl font-bold text-red-400 mt-2">
-                  {stats.eventCount}
-                </p>
-              </button>
+                {/* Events */}
+                <button
+                  onClick={() => setSection("events")}
+                  className="bg-zinc-900/80 border border-red-700 p-6 rounded-2xl w-full max-w-[250px]"
+                >
+                  <h2 className="text-gray-400 text-sm uppercase">
+                    Events Created
+                  </h2>
+                  <p className="text-4xl font-bold text-red-400 mt-2">
+                    {stats.eventCount}
+                  </p>
+                </button>
+              </div>
             </div>
           </div>
         )}

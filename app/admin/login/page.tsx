@@ -11,15 +11,21 @@ export default function AdminLogin() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
     const res = await fetch("/api/admin/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
+
+      // IMPORTANT: Supabase login uses "email", not "username"
+      body: JSON.stringify({ email: username, password }),
     });
 
     const json = await res.json();
+
     if (json.success) {
+      // You will remove this later once secure cookies + middleware is active
       localStorage.setItem("admin-auth", "true");
+
       router.push("/admin");
     } else {
       setError("Invalid username or password");
@@ -28,10 +34,10 @@ export default function AdminLogin() {
 
   return (
     <section className="relative flex items-center justify-center min-h-screen text-white overflow-hidden">
-      {/* 🏁 Background image */}
+      {/* Background image */}
       <div className="absolute inset-0 bg-[url('/track-bg.jpg')] bg-cover bg-center opacity-40"></div>
 
-      {/* Dark overlay for readability */}
+      {/* Dark overlay */}
       <div className="absolute inset-0 bg-black/40"></div>
 
       {/* Login Card */}
@@ -43,11 +49,12 @@ export default function AdminLogin() {
         <form onSubmit={handleLogin}>
           <input
             type="text"
-            placeholder="Username"
+            placeholder="Email"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             className="w-full mb-4 p-2 rounded bg-gray-800 text-white focus:outline-none border border-gray-700"
           />
+
           <input
             type="password"
             placeholder="Password"
@@ -55,7 +62,9 @@ export default function AdminLogin() {
             onChange={(e) => setPassword(e.target.value)}
             className="w-full mb-4 p-2 rounded bg-gray-800 text-white focus:outline-none border border-gray-700"
           />
+
           {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
+
           <button
             type="submit"
             className="w-full bg-red-700 hover:bg-red-800 py-2 rounded font-semibold transition-all"
@@ -65,7 +74,7 @@ export default function AdminLogin() {
         </form>
       </div>
 
-      {/* Optional: simple fade-in animation */}
+      {/* Animation */}
       <style jsx>{`
         @keyframes fadeIn {
           from {

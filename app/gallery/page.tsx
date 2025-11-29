@@ -26,7 +26,6 @@ export default function GalleryPage() {
     const params = new URLSearchParams();
     params.append("limit", "999");
 
-    // Only add category if not All
     if (categoryFilter !== "All") {
       params.append("category", categoryFilter);
     }
@@ -51,7 +50,6 @@ export default function GalleryPage() {
     setLoading(false);
   };
 
-  // Fetch when category changes (or first load)
   useEffect(() => {
     fetchGallery();
   }, [categoryFilter]);
@@ -110,9 +108,17 @@ export default function GalleryPage() {
                 alt={img.caption || "Gallery image"}
               />
 
+              {/* Category Label */}
               {img.category && (
                 <div className="absolute top-1 left-2 text-xs bg-red-600/80 px-2 py-1 rounded shadow">
                   {img.category}
+                </div>
+              )}
+
+              {/* Caption under thumbnail (NEW) */}
+              {img.caption && (
+                <div className="absolute bottom-1 left-2 text-xs bg-black/60 px-2 py-1 rounded max-w-[90%] truncate">
+                  {img.caption}
                 </div>
               )}
             </motion.div>
@@ -126,7 +132,7 @@ export default function GalleryPage() {
           </div>
         )}
 
-        {/* Empty state */}
+        {/* Empty State */}
         {!loading && images.length === 0 && (
           <div className="text-center text-gray-400 py-10">
             No photos found in this category
@@ -150,7 +156,14 @@ export default function GalleryPage() {
               className="max-h-[90vh] max-w-[90vw] object-contain rounded-xl"
             />
 
-            {/* Nav */}
+            {/* Caption inside modal (NEW) */}
+            {images[selectedImageIndex].caption && (
+              <div className="absolute bottom-10 text-center w-full text-lg text-gray-200 px-6">
+                {images[selectedImageIndex].caption}
+              </div>
+            )}
+
+            {/* Prev */}
             <button
               className="absolute left-10 text-white text-4xl"
               onClick={(e) => {
@@ -161,6 +174,7 @@ export default function GalleryPage() {
               ‹
             </button>
 
+            {/* Next */}
             <button
               className="absolute right-10 text-white text-4xl"
               onClick={(e) => {
