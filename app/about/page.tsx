@@ -114,7 +114,7 @@ export default function About() {
                 Intermediate
               </h2>
               <p className="text-gray-300 leading-relaxed">
-                Perfect for younger racers under 15 years old with a height below 150 cm.
+                Perfect for younger racers with a height minimum 120 cm and a maximum weight of 70 kg.
                 This level introduces them to the excitement of go-karting in a safe and controlled environment.
                 Experience real track driving, with safety and fun as top priority.
               </p>
@@ -130,7 +130,7 @@ export default function About() {
                 Advance
               </h2>
               <p className="text-gray-300 leading-relaxed">
-                Designed for experienced drivers aged 15 years and above, or racers taller than 150 cm.
+                Designed for experienced drivers with a minimum height of 155 cm and a maximum weight of 100 kg.
                 Push your limits with faster karts, tighter corners, and the full Drift.Inc track experience.
                 Feel the adrenaline rush of competitive racing in its purest form.
               </p>
