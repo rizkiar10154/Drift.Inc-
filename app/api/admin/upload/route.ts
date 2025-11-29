@@ -1,3 +1,4 @@
+/*
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
@@ -26,3 +27,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, message: "Upload failed" }, { status: 500 });
   }
 }
+*/

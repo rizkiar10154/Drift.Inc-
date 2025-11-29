@@ -1,3 +1,4 @@
+//app/admin/components/GalleryManager.tsx
 "use client";
 
 import { useEffect, useState } from "react";
