@@ -34,17 +34,39 @@ export async function GET(req: Request) {
     const { data: rows, error } = await query;
     if (error) throw error;
 
-    const unique = new Map();
-    (rows || []).forEach((r: any) => unique.set(r.id, r));
+    // === FIX: Generate signed URLs regardless of the type ===
+    const items = await Promise.all(
+      (rows || []).map(async (r: any) => {
+        let signedUrl = r.url;
 
-    const items = Array.from(unique.values()).map((r: any) => ({
-      id: r.id,
-      url: r.url,
-      category: r.category,
-      caption: r.caption,
-      uploaded_at: r.uploaded_at,
-      is_deleted: r.is_deleted ?? false,
-    }));
+        try {
+          const urlObj = new URL(r.url);
+          const marker = `/object/`;
+          const idx = urlObj.pathname.indexOf(marker);
+
+          if (idx !== -1) {
+            const objectPath = urlObj.pathname.slice(idx + marker.length);
+
+            const { data: signed } = await supabaseAdmin.storage
+              .from(BUCKET)
+              .createSignedUrl(objectPath, 60 * 60 * 24 * 7); // 7 days
+
+            if (signed?.signedUrl) {
+              signedUrl = signed.signedUrl;
+            }
+          }
+        } catch (_) {}
+
+        return {
+          id: r.id,
+          url: signedUrl,
+          category: r.category,
+          caption: r.caption,
+          uploaded_at: r.uploaded_at,
+          is_deleted: r.is_deleted ?? false,
+        };
+      })
+    );
 
     const { count } = await supabaseAdmin
       .from("gallery")

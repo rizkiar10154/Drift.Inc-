@@ -66,6 +66,9 @@ export default function GalleryPage() {
     }
   };
 
+  const isVideo = (url: string) =>
+    /\.(mp4|mov|webm|mkv)$/i.test(url);
+
   return (
     <section className="relative min-h-screen p-16 text-white">
       {/* Background */}
@@ -94,35 +97,48 @@ export default function GalleryPage() {
 
         {/* Gallery Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {images.map((img, index) => (
-            <motion.div
-              key={img.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="overflow-hidden rounded-xl border border-red-800/40 hover:border-red-500 transition group cursor-pointer relative"
-              onClick={() => setSelectedImageIndex(index)}
-            >
-              <img
-                src={img.url}
-                className="object-cover w-full h-48 group-hover:scale-105 transition-transform duration-300"
-                alt={img.caption || "Gallery image"}
-              />
+          {images.map((img, index) => {
+            const video = isVideo(img.url);
 
-              {/* Category Label */}
-              {img.category && (
-                <div className="absolute top-1 left-2 text-xs bg-red-600/80 px-2 py-1 rounded shadow">
-                  {img.category}
-                </div>
-              )}
+            return (
+              <motion.div
+                key={img.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="overflow-hidden rounded-xl border border-red-800/40 hover:border-red-500 transition group cursor-pointer relative"
+                onClick={() => setSelectedImageIndex(index)}
+              >
+                {video ? (
+                  <video
+                    src={img.url}
+                    className="object-cover w-full h-48 group-hover:scale-105 transition-transform duration-300"
+                    muted
+                    playsInline
+                  />
+                ) : (
+                  <img
+                    src={img.url}
+                    className="object-cover w-full h-48 group-hover:scale-105 transition-transform duration-300"
+                    alt={img.caption || "Gallery image"}
+                  />
+                )}
 
-              {/* Caption under thumbnail (NEW) */}
-              {img.caption && (
-                <div className="absolute bottom-1 left-2 text-xs bg-black/60 px-2 py-1 rounded max-w-[90%] truncate">
-                  {img.caption}
-                </div>
-              )}
-            </motion.div>
-          ))}
+                {/* Category Label */}
+                {img.category && (
+                  <div className="absolute top-1 left-2 text-xs bg-red-600/80 px-2 py-1 rounded shadow">
+                    {img.category}
+                  </div>
+                )}
+
+                {/* Caption */}
+                {img.caption && (
+                  <div className="absolute bottom-1 left-2 text-xs bg-black/60 px-2 py-1 rounded max-w-[90%] truncate">
+                    {img.caption}
+                  </div>
+                )}
+              </motion.div>
+            );
+          })}
         </div>
 
         {/* Loading */}
@@ -151,12 +167,22 @@ export default function GalleryPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <img
-              src={images[selectedImageIndex].url}
-              className="max-h-[90vh] max-w-[90vw] object-contain rounded-xl"
-            />
+            {isVideo(images[selectedImageIndex].url) ? (
+              <video
+                src={images[selectedImageIndex].url}
+                className="max-h-[90vh] max-w-[90vw] object-contain rounded-xl"
+                controls
+                autoPlay
+                playsInline
+              />
+            ) : (
+              <img
+                src={images[selectedImageIndex].url}
+                className="max-h-[90vh] max-w-[90vw] object-contain rounded-xl"
+              />
+            )}
 
-            {/* Caption inside modal (NEW) */}
+            {/* Caption */}
             {images[selectedImageIndex].caption && (
               <div className="absolute bottom-10 text-center w-full text-lg text-gray-200 px-6">
                 {images[selectedImageIndex].caption}
