@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 type Timeframe = "day" | "week" | "month" | "year" | "all";
 type Level = "advanced" | "intermediate";
 
-const TRACK_CONFIG_ID = 1618;
+const TRACK_CONFIG_ID = 1652;
 const KART_ID_BY_LEVEL: Record<Level, number> = {
   advanced: 1988,
   intermediate: 1991,
